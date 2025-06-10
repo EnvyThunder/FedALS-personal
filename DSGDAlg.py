@@ -1,4 +1,5 @@
 from Functions import *
+import random
 
 def parallel_sgd_measure(identity, total_data, whole_dataset, exp, cte, H, iters, sampling_f, device, criterion,
                          num_worker, batch_size, test_loader, alpha, tokenizer, network):
