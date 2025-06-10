@@ -13,8 +13,8 @@ import sys
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 
-# inp = sys.argv
-inp = [None, "2", "iid", "100000", "1", "0", "0", "sgd"]
+inp = sys.argv
+#inp = [None, "2", "iid", "100000", "1", "0", "0", "sgd"]
 ###############config_variables###############
 config_file_name = inp[1]  # network topology
 num_of_node = int(config_file_name)
