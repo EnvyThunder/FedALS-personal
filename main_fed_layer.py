@@ -371,6 +371,7 @@ if __name__ == '__main__':
     print("### Result begins")
     print(json.dumps(result))
     print("### Result ends")
+    print(simulation_result_file_name)
 
     with open("result/"+simulation_result_file_name, 'w') as f:
         f.write(json.dumps(result))
