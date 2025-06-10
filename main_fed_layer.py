@@ -356,7 +356,7 @@ if __name__ == '__main__':
     for exp in lr_exp:
         input_arg = (g, stream, (identity, total_data, dataset, exp, cte, H, iteration,
                                  sampling_f, device, criterion, num_worker, batch_size, test_loader, alpha, L,
-                                 tokenizer))
+                                 tokenizer, participation))
         if not child_process:
             res = []
             for run in range(repeat_simulation):
