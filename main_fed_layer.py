@@ -20,19 +20,21 @@ config_file_name = inp[1]  # network topology
 num_of_node = int(config_file_name)
 sampling_f = 100  # record frequency of training loss and test accuracy to measure
 iteration = 2 * 10 ** 4
-repeat_simulation = 10
+repeat_simulation = 3
+participation = float(inp[11])
 child_process = False  # if True creates `repeat_simulation`s parallel threads to run all simultaneously
-mps = True
+mps = False
 gpu = int(inp[6])  # gpu core number to use
-num_worker = 0  # number of workers to lead data samples (torch.num_worker)
-batch_size = 64
-cte = True  # set true for constant leraning rate, set [100,10] for decaying learning rate (Check Functions.learning_rate)
-# cte = [100,10]
-lr_exp = [
-    -7]  # log of the different values for the learning rate - If decaying learning rate is set this weill determine the initial value
+num_worker = 4  # number of workers to lead data samples (torch.num_worker)
+batch_size = 16
+#cte = True  # set true for constant leraning rate, set [100,10] for decaying learning rate (Check Functions.learning_rate)
+cte = [100,10]
+lr_exp = list(range(int(inp[8]),int(inp[9]))) # log of the different values for the learning rate - If decaying learning rate is set this weill determine the initial value
 iid = inp[2] == "iid"
+dirichlet = False
+dirichlet_parameter = float(inp[10])
 identity = [
-    "cifar10", ]  # task identity: chose between "cifar10", "cifar100", "SVHN", "Mnist", "ImageNet", "LLM"
+    "LLM", ]  # task identity: chose between "cifar10", "cifar100", "SVHN", "Mnist", "ImageNet", "LLM"
 H = int(inp[3])
 alpha = int(inp[4])
 L = int(inp[5])
@@ -67,7 +69,7 @@ else:
 if identity[0] == "synthetic":
     criterion = nn.CrossEntropyLoss()
     tokenizer = None
-    model = LogisticRegression(inp_dim, out_class).to(device)
+    model = LogisticRegression(inp_dim, out_class).to(device) #or TwoLayerPerceptron
     train_x = torch.empty((0, inp_dim), dtype=torch.float32)
     test_x = torch.empty((0, inp_dim), dtype=torch.float32)
     train_y = torch.empty((0), dtype=torch.int)
@@ -131,10 +133,16 @@ elif identity[0] == "cifar10":
     for node in range(num_of_node):
         data_split.append((guid_to_split[node], guid_to_split[node + 1]))
     if not iid:
-        indices = []
-        for n in range(10):
-            boolArr = np.array(train_dataset.targets) == n
-            indices += list(np.where(boolArr)[0])
+        if not dirichlet:
+            indices=[]
+            for n in range(10):
+                boolArr = np.array(train_dataset.targets) == n
+                indices += list(np.where(boolArr)[0])
+        else:
+            indices_per_worker = distribute_data_dirichlet(
+                train_dataset.targets, dirichlet_parameter, num_of_node, num_auxiliary_workers=10
+            )
+            indices = np.concatenate(indices_per_worker)
         dataset = torch.utils.data.Subset(train_dataset, indices)
 
 elif identity[0] == "cifar100":
@@ -360,6 +368,9 @@ if __name__ == '__main__':
         print("All done -", "Layer-wise - exp =", exp, repeat_simulation, "times at",
               datetime.datetime.now().strftime("%a, %d %B %Y %H:%M:%S"))
 
+    print("### Result begins")
+    print(json.dumps(result))
+    print("### Result ends")
 
     with open("result/"+simulation_result_file_name, 'w') as f:
         f.write(json.dumps(result))

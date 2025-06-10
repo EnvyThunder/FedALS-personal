@@ -2,7 +2,7 @@ from Functions import *
 import random
 
 def parallel_sgd_measure(identity, total_data, whole_dataset, exp, cte, H, iters, sampling_f, device, criterion,
-                         num_worker, batch_size, test_loader, alpha, tokenizer, network):
+                         num_worker, batch_size, test_loader, alpha, tokenizer, participation, network):
     all_layers = list(network.all_node[0].x.state_dict().keys())
     if identity[0] == "LLM":
         #just using .01 of the dataset to compute training loss
@@ -41,7 +41,7 @@ def parallel_sgd_measure(identity, total_data, whole_dataset, exp, cte, H, iters
             print(loss_over_t[-1])
             print(real_time_over_t[-1])
             print(comm_over_t[-1])
-        for node in network.all_node:
+        for node in random.sample(network.all_node, int(len(network.all_node) * participation)):
             end = t - node.lag + 1
             start = max(t - node.lag, 0)
             for sgd_round in range(start, end):
@@ -59,7 +59,7 @@ def parallel_sgd_measure(identity, total_data, whole_dataset, exp, cte, H, iters
 
 
 def parallel_sgd_layer(identity, total_data, whole_dataset, exp, cte, H, iters, sampling_f, device, criterion,
-                       num_worker, batch_size, test_loader, alpha, L, tokenizer, network):
+                       num_worker, batch_size, test_loader, alpha, L, tokenizer, participation, network):
     all_layers = list(network.all_node[0].x.state_dict().keys())
     if identity[0] == "LLM":
         #just using .01 of the dataset to compute training loss
@@ -100,7 +100,7 @@ def parallel_sgd_layer(identity, total_data, whole_dataset, exp, cte, H, iters, 
             print(loss_over_t[-1])
             print(real_time_over_t[-1])
             print(comm_over_t[-1])
-        for node in network.all_node:
+        for node in random.sample(network.all_node, int(len(network.all_node) * participation)):
             end = t - node.lag + 1
             start = max(t - node.lag, 0)
             for sgd_round in range(start, end):
@@ -122,7 +122,7 @@ def parallel_sgd_layer(identity, total_data, whole_dataset, exp, cte, H, iters, 
 
 
 def parallel_scaffold_layer(identity, total_data, whole_dataset, exp, cte, H, iters, sampling_f, device, criterion,
-                            num_worker, batch_size, test_loader, alpha, L, tokenizer, network):
+                            num_worker, batch_size, test_loader, alpha, L, tokenizer, participation, network):
     all_layers = list(network.all_node[0].x.state_dict().keys())
     if identity[0] == "LLM":
         #just using .01 of the dataset to compute training loss
@@ -163,7 +163,7 @@ def parallel_scaffold_layer(identity, total_data, whole_dataset, exp, cte, H, it
             print(loss_over_t[-1])
             print(real_time_over_t[-1])
             print(comm_over_t[-1])
-        for node in network.all_node:
+        for node in random.sample(network.all_node, int(len(network.all_node) * participation)):
             end = t - node.lag + 1
             start = max(t - node.lag, 0)
             for sgd_round in range(start, end):
@@ -199,7 +199,7 @@ def parallel_scaffold_layer(identity, total_data, whole_dataset, exp, cte, H, it
     return [loss_over_t, real_time_over_t, comm_over_t, difference_by_layer_over_t]
 
 def parallel_gen_layer(identity, total_data, whole_dataset, exp, cte, H, iters, sampling_f, device, criterion,
-                       num_worker, batch_size, test_loader, alpha, L, tokenizer, network):
+                       num_worker, batch_size, test_loader, alpha, L, tokenizer, participation, network):
     all_layers = list(network.all_node[0].x.state_dict().keys())
     if identity[0] == "LLM":
         #just using .01 of the dataset to compute training loss
@@ -260,7 +260,7 @@ def parallel_gen_layer(identity, total_data, whole_dataset, exp, cte, H, iters, 
             print(comm_over_t[-1])
             print(loss_over_t_nodes[-1])
             print(noniid_over_t_nodes[-1])
-        for node in network.all_node:
+        for node in random.sample(network.all_node, int(len(network.all_node) * participation)):
             end = t - node.lag + 1
             start = max(t - node.lag, 0)
             for sgd_round in range(start, end):
