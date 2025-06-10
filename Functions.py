@@ -45,7 +45,7 @@ def matrix_softmax(u):
 
 def logistic_regression(identity, weight, feature, label, lr, optimizer, device, criterion,tokenizer):
     if identity[0] == "LLM":
-        update_lr(optimizer, lr)
+        #update_lr(optimizer, lr)
         with torch.cuda.amp.autocast():
             batch = tokenizer(feature, truncation=True, padding=True, max_length=128, return_tensors='pt')
             batch = {k: v.cuda() for k, v in batch.items()}
