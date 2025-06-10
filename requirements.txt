@@ -10,3 +10,4 @@ pillow~=9.4.0
 bitsandbytes~=0.41.3.post2
 transformers~=4.36.0
 datasets~=2.15.0
+accelerate
