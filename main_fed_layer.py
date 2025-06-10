@@ -301,8 +301,8 @@ elif identity[0] == "ImageNet":
 elif identity[0] == 'LLM':
     criterion = nn.CrossEntropyLoss()
     model = AutoModelForCausalLM.from_pretrained(
-        "facebook/opt-1.3b",
-        load_in_8bit=True,
+        "facebook/opt-125m",
+        load_in_8bit=False,
         device_map='auto',
     )
     tokenizer = AutoTokenizer.from_pretrained("facebook/opt-6.7b")
