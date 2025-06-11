@@ -27,8 +27,8 @@ mps = False
 gpu = int(inp[6])  # gpu core number to use
 num_worker = 4  # number of workers to lead data samples (torch.num_worker)
 batch_size = 16
-#cte = True  # set true for constant leraning rate, set [100,10] for decaying learning rate (Check Functions.learning_rate)
-cte = [100,10]
+cte = True  # set true for constant leraning rate, set [100,10] for decaying learning rate (Check Functions.learning_rate)
+#cte = [100,10]
 lr_exp = list(range(int(inp[8]),int(inp[9]))) # log of the different values for the learning rate - If decaying learning rate is set this weill determine the initial value
 iid = inp[2] == "iid"
 dirichlet = False
