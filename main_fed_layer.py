@@ -20,7 +20,7 @@ config_file_name = inp[1]  # network topology
 num_of_node = int(config_file_name)
 sampling_f = 100  # record frequency of training loss and test accuracy to measure
 iteration = 2 * 10 ** 4
-repeat_simulation = 3
+repeat_simulation = 10
 participation = float(inp[11])
 child_process = False  # if True creates `repeat_simulation`s parallel threads to run all simultaneously
 mps = False
@@ -34,7 +34,7 @@ iid = inp[2] == "iid"
 dirichlet = False
 dirichlet_parameter = float(inp[10])
 identity = [
-    "LLM", ]  # task identity: chose between "cifar10", "cifar100", "SVHN", "Mnist", "ImageNet", "LLM"
+    "SVHN", ]  # task identity: chose between "cifar10", "cifar100", "SVHN", "Mnist", "ImageNet", "LLM"
 H = int(inp[3])
 alpha = int(inp[4])
 L = int(inp[5])
