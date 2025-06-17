@@ -54,7 +54,7 @@ class Node:
     def observe_delay(self, a_index):
         return self.delay_shift + np.random.exponential(self.delay_dist[a_index])
 
-    def local_sgd(self, identity, total_data, t, lr, tokenizer):
+    def local_sgd(self, identity, total_data, t, lr, tokenizer, new_model, fed_prox_cons):
         if identity[0] == "LLM":
             self.load_data()
             i_feature = self.train_batch['text']
@@ -62,7 +62,7 @@ class Node:
         else:
             self.load_data()
             i_feature, i_label = self.train_batch
-        self.x, gr = logistic_regression(identity, self.x, i_feature, i_label, lr, self.optimizer, self.device, self.criterion, tokenizer)
+        self.x, gr = logistic_regression(identity, self.x, i_feature, i_label, lr, self.optimizer, self.device, self.criterion, tokenizer, new_model, fed_prox_cons)
         return gr
 
 

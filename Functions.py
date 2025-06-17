@@ -43,7 +43,9 @@ def matrix_softmax(u):
     return expu / np.sum(expu, axis=1).reshape(u.shape[0], 1)
 
 
-def logistic_regression(identity, weight, feature, label, lr, optimizer, device, criterion,tokenizer):
+def logistic_regression(identity, weight, feature, label, lr, optimizer, device, criterion,tokenizer, new_model, fed_prox_cons):
+    if fed_prox_cons != 0:
+        global_weights = copy.deepcopy(new_model)
     if identity[0] == "LLM":
         #update_lr(optimizer, lr)
         with torch.cuda.amp.autocast():
@@ -53,6 +55,14 @@ def logistic_regression(identity, weight, feature, label, lr, optimizer, device,
             out = weight.forward(**batch, )
             one_loss = F.cross_entropy(out.logits[:, :-1, :].flatten(0, -2), batch['input_ids'][:, 1:].flatten(),
                                    reduction='mean')
+            if fed_prox_cons != 0:
+                proximal_term = 0.0
+                for param_name, local_param in weight.named_parameters():
+                    if param_name in global_weights:
+                        global_param = global_weights[param_name].to(device)  # Ensure global_param is on device
+                        proximal_term += torch.norm(local_param - global_param, 2)
+                fedprox_loss = (fed_prox_cons / 2) * proximal_term
+                one_loss += fedprox_loss
             # Backward and optimize
             one_loss.backward()
             optimizer.step()
@@ -69,6 +79,14 @@ def logistic_regression(identity, weight, feature, label, lr, optimizer, device,
             # print(outputs)
             # print(labels)
             one_loss = criterion(outputs, labels)
+            if fed_prox_cons != 0:
+                proximal_term = 0.0
+                for param_name, local_param in weight.named_parameters():
+                    if param_name in global_weights:
+                        global_param = global_weights[param_name].to(device)  # Ensure global_param is on device
+                        proximal_term += torch.norm(local_param - global_param, 2)
+                fedprox_loss = (fed_prox_cons / 2) * proximal_term
+                one_loss += fedprox_loss
             # one_loss = Variable(one_loss, requires_grad=True)
             # print(one_loss)
             # input("right?")

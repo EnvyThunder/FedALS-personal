@@ -59,7 +59,7 @@ def parallel_sgd_measure(identity, total_data, whole_dataset, exp, cte, H, iters
 
 
 def parallel_sgd_layer(identity, total_data, whole_dataset, exp, cte, H, iters, sampling_f, device, criterion,
-                       num_worker, batch_size, test_loader, alpha, L, tokenizer, participation, network):
+                       num_worker, batch_size, test_loader, alpha, L, tokenizer, participation, fed_prox_cons, network):
     all_layers = list(network.all_node[0].x.state_dict().keys())
     if identity[0] == "LLM":
         #just using .01 of the dataset to compute training loss
@@ -91,6 +91,7 @@ def parallel_sgd_layer(identity, total_data, whole_dataset, exp, cte, H, iters, 
     comm_over_t = []
     comm = 0
     difference_by_layer_over_t = []
+    new_model = network.all_node[0].x.state_dict()
     for t in range(iters):
         if t % sampling_f == 0:
             final_x = network.final(identity, total_data)
@@ -104,7 +105,7 @@ def parallel_sgd_layer(identity, total_data, whole_dataset, exp, cte, H, iters, 
             end = t - node.lag + 1
             start = max(t - node.lag, 0)
             for sgd_round in range(start, end):
-                node.local_sgd(identity, total_data, sgd_round, learning_rate(sgd_round, exp, cte), tokenizer)
+                node.local_sgd(identity, total_data, sgd_round, learning_rate(sgd_round, exp, cte), tokenizer, new_model, fed_prox_cons)
         to_be_updated_layers = []
         for i in range(len(Hs)):
             if t % Hs[i] == 0:

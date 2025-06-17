@@ -19,9 +19,10 @@ inp = sys.argv
 config_file_name = inp[1]  # network topology
 num_of_node = int(config_file_name)
 sampling_f = 100  # record frequency of training loss and test accuracy to measure
-iteration = 3 * 10 ** 4
-repeat_simulation = 10
+iteration = 2 * 10 ** 4
+repeat_simulation = 3
 participation = float(inp[11])
+fed_prox_cons = .01
 child_process = False  # if True creates `repeat_simulation`s parallel threads to run all simultaneously
 mps = False
 gpu = int(inp[6])  # gpu core number to use
@@ -50,7 +51,7 @@ mean = torch.FloatTensor([1 for i in range(
 cov = torch.eye(inp_dim)  # cov matrix of the gussian features in identity = ["synthetic",]
 simulation_result_file_name = mode + "_learning_rate_cte" + str(cte) + config_file_name + "_nodes" + identity[
     0] + "_iid" + str(iid)+ "dirichlet" + str(dirichlet) + str(dirichlet_parameter) + "_H" + str(H) + "_alpha" + str(alpha) + "_L" + str(L) + "_iter" + str(
-    iteration) + "_batch_size" + str(batch_size) + "lr" + str(len(lr_exp))+ "participation" + str(participation)
+    iteration) + "_batch_size" + str(batch_size) + "lr" + str(len(lr_exp))+ "participation" + str(participation) + "fed_prox_cons" + str(fed_prox_cons)
 ###############config_variables###############
 
 
@@ -356,7 +357,7 @@ if __name__ == '__main__':
     for exp in lr_exp:
         input_arg = (g, stream, (identity, total_data, dataset, exp, cte, H, iteration,
                                  sampling_f, device, criterion, num_worker, batch_size, test_loader, alpha, L,
-                                 tokenizer, participation))
+                                 tokenizer, participation, fed_prox_cons))
         if not child_process:
             res = []
             for run in range(repeat_simulation):
