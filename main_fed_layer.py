@@ -51,7 +51,7 @@ mean = torch.FloatTensor([1 for i in range(
 cov = torch.eye(inp_dim)  # cov matrix of the gussian features in identity = ["synthetic",]
 simulation_result_file_name = mode + "_learning_rate_cte" + str(cte) + config_file_name + "_nodes" + identity[
     0] + "_iid" + str(iid)+ "dirichlet" + str(dirichlet) + str(dirichlet_parameter) + "_H" + str(H) + "_alpha" + str(alpha) + "_L" + str(L) + "_iter" + str(
-    iteration) + "_batch_size" + str(batch_size) + "lr" + str(len(lr_exp))+ "participation" + str(participation) + "fed_prox_cons" + str(fed_prox_cons)
+    iteration) + "_batch_size" + str(batch_size) + "lr" + str(lr_exp)+ "participation" + str(participation) + "fed_prox_cons" + str(fed_prox_cons)
 ###############config_variables###############
 
 
