@@ -19,14 +19,14 @@ inp = sys.argv
 config_file_name = inp[1]  # network topology
 num_of_node = int(config_file_name)
 sampling_f = 100  # record frequency of training loss and test accuracy to measure
-iteration = 2 * 10 ** 4
-repeat_simulation = 3
+iteration = 3 * 10 ** 4
+repeat_simulation = 5
 participation = float(inp[11])
-fed_prox_cons = .01
+fed_prox_cons = 0
 child_process = False  # if True creates `repeat_simulation`s parallel threads to run all simultaneously
 mps = False
 gpu = int(inp[6])  # gpu core number to use
-num_worker = 5  # number of workers to lead data samples (torch.num_worker)
+num_worker = 2  # number of workers to lead data samples (torch.num_worker)
 batch_size = 64 #16 for llm
 cte = True  # set true for constant leraning rate, set [100,10] for decaying learning rate (Check Functions.learning_rate)
 #cte = [100,10]
@@ -223,10 +223,10 @@ elif identity[0] == "SVHN":
 
 elif identity[0] == "Mnist":
     criterion = nn.CrossEntropyLoss()
-    model = ResNet(ResidualBlock, [3, 3, 3]).to(device)
+    model = ResNet_grayscale(ResidualBlock, [3, 3, 3]).to(device)
     normalize = transforms.Normalize(mean=[0.485, ],
                                      std=[0.229, ])
-    transform = transforms.Compose([transforms.Resize((224, 224)),
+    transform = transforms.Compose([transforms.Resize((32, 32)),
                                     transforms.RandomHorizontalFlip(),
                                     transforms.RandomCrop(32, 4),
                                     transforms.ToTensor(),
@@ -258,6 +258,59 @@ elif identity[0] == "Mnist":
             boolArr = np.array(train_dataset.targets) == n
             indices += list(np.where(boolArr)[0])
         dataset = torch.utils.data.Subset(train_dataset, indices)
+
+elif identity[0]=="FeMnist":
+    criterion = nn.CrossEntropyLoss()
+    model = ResNet_grayscale(ResidualBlock, [3, 3, 3], num_classes=62).to(device)
+    normalize = transforms.Normalize(mean=[0.1307], std=[0.3081])
+
+    transform_train = transforms.Compose([
+        transforms.Grayscale(num_output_channels=1),
+        transforms.Resize((32, 32)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomCrop(32, padding=4),
+        transforms.ToTensor(),
+        normalize,
+    ])
+
+    transform_test = transforms.Compose([
+        transforms.Grayscale(num_output_channels=1),
+        transforms.Resize((32, 32)),
+        transforms.ToTensor(),
+        normalize,
+    ])
+
+    train_dataset = FEMNIST(root='./data/',
+                                 train=True,
+                                 transform=transform_train,
+                                 download=True)
+
+    test_dataset = FEMNIST(root='./data/',
+                           train=False,
+                           transform=transform_test,
+                           download=True)
+
+    test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                              batch_size=100,
+                                              shuffle=False)
+    tokenizer = None
+    total_data = len(train_dataset)
+    indices = np.arange(total_data)
+    indices = np.random.permutation(indices)
+    data_split = []
+    dataset = torch.utils.data.Subset(train_dataset, indices)
+    guid_to_split = range(0, total_data + 1, total_data // num_of_node)
+    for node in range(num_of_node):
+        # data_split.append((0,total_data))
+        data_split.append((guid_to_split[node], guid_to_split[node + 1]))
+    if not iid:
+        indices = []
+        writers = train_dataset.user_ids['users']
+        for w in writers:
+            boolArr = np.array(train_dataset.users) == w
+            indices += list(np.where(boolArr)[0])
+        dataset = torch.utils.data.Subset(train_dataset, indices)
+
 
 elif identity[0] == "ImageNet":
     criterion = nn.CrossEntropyLoss()

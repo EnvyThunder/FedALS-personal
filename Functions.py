@@ -15,7 +15,8 @@ from bitsandbytes.optim import Adam8bit
 from transformers import AdamW
 from torch.distributions.multivariate_normal import MultivariateNormal
 from torch.autograd import Variable
-
+import shutil
+from torchvision.datasets import MNIST, utils
 
 def sigmoid(scores):
     return 1 / (1 + np.exp(-scores))
@@ -273,6 +274,44 @@ class ResNet(nn.Module):
         out = self.fc(out)
         return out
 
+
+class ResNet_grayscale(nn.Module):
+    def __init__(self, block, layers, num_classes=10):
+        super(ResNet_grayscale, self).__init__()
+        self.in_channels = 16
+        self.conv = conv3x3(1, 16)
+        self.bn = nn.BatchNorm2d(16)
+        self.relu = nn.ReLU(inplace=True)
+        self.layer1 = self.make_layer(block, 16, layers[0])
+        self.layer2 = self.make_layer(block, 32, layers[1], 2)
+        self.layer3 = self.make_layer(block, 64, layers[2], 2)
+        self.avg_pool = nn.AvgPool2d(8)
+        self.fc = nn.Linear(64, num_classes)
+
+    def make_layer(self, block, out_channels, blocks, stride=1):
+        downsample = None
+        if (stride != 1) or (self.in_channels != out_channels):
+            downsample = nn.Sequential(
+                conv3x3(self.in_channels, out_channels, stride=stride),
+                nn.BatchNorm2d(out_channels))
+        layers = []
+        layers.append(block(self.in_channels, out_channels, stride, downsample))
+        self.in_channels = out_channels
+        for i in range(1, blocks):
+            layers.append(block(out_channels, out_channels))
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        out = self.conv(x)
+        out = self.bn(out)
+        out = self.relu(out)
+        out = self.layer1(out)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = self.avg_pool(out)
+        out = out.view(out.size(0), -1)
+        out = self.fc(out)
+        return out
 def update_lr(optimizer, lr):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
@@ -525,3 +564,55 @@ class TwoLayerPerceptron(nn.Module):
         # For this example, we'll keep softmax as in your original request.
         out = F.softmax(out, dim=1)
         return out
+
+class FEMNIST(MNIST):
+    def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
+        super(MNIST, self).__init__(root, transform=transform, target_transform=target_transform)
+        self.download = download
+        self.download_link = 'https://media.githubusercontent.com/media/GwenLegate/femnist-dataset-PyTorch/main/femnist.tar.gz'
+        self.file_md5 = 'a8a28afae0e007f1acb87e37919a21db'
+        self.train = train
+        self.root = root
+        self.training_file = f'{self.root}/FEMNIST/processed/femnist_train.pt'
+        self.test_file = f'{self.root}/FEMNIST/processed/femnist_test.pt'
+        self.user_list = f'{self.root}/FEMNIST/processed/femnist_user_keys.pt'
+
+        if not os.path.exists(f'{self.root}/FEMNIST/processed/femnist_test.pt') \
+                or not os.path.exists(f'{self.root}/FEMNIST/processed/femnist_train.pt'):
+            if self.download:
+                self.dataset_download()
+            else:
+                raise RuntimeError('Dataset not found, set parameter download=True to download')
+
+        if self.train:
+            data_file = self.training_file
+        else:
+            data_file = self.test_file
+
+        data_targets_users = torch.load(data_file)
+        self.data, self.targets, self.users = torch.Tensor(data_targets_users[0]), torch.Tensor(data_targets_users[1]), data_targets_users[2]
+        self.user_ids = torch.load(self.user_list)
+
+    def __getitem__(self, index):
+        img, target = self.data[index], int(self.targets[index])
+        img = Image.fromarray(img.numpy(), mode='F')
+        if self.transform is not None:
+            img = self.transform(img)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+        return img, target
+
+    def dataset_download(self):
+        paths = [f'{self.root}/FEMNIST/raw/', f'{self.root}/FEMNIST/processed/']
+        for path in paths:
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+        # download files
+        filename = self.download_link.split('/')[-1]
+        utils.download_and_extract_archive(self.download_link, download_root=f'{self.root}/FEMNIST/raw/', filename=filename, md5=self.file_md5)
+
+        files = ['femnist_train.pt', 'femnist_test.pt', 'femnist_user_keys.pt']
+        for file in files:
+            # move to processed dir
+            shutil.move(os.path.join(f'{self.root}/FEMNIST/raw/', file), f'{self.root}/FEMNIST/processed/')
