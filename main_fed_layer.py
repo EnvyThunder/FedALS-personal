@@ -18,16 +18,16 @@ inp = sys.argv
 ###############config_variables###############
 config_file_name = inp[1]  # network topology
 num_of_node = int(config_file_name)
-sampling_f = 100  # record frequency of training loss and test accuracy to measure
-iteration = 3 * 10 ** 4
-repeat_simulation = 10
+sampling_f = 1000  # record frequency of training loss and test accuracy to measure
+iteration = 2 * 10 ** 4
+repeat_simulation = 3
 participation = float(inp[11])
 fed_prox_cons = 0
 child_process = False  # if True creates `repeat_simulation`s parallel threads to run all simultaneously
 mps = False
 gpu = int(inp[6])  # gpu core number to use
 num_worker = 2  # number of workers to lead data samples (torch.num_worker)
-batch_size = 64 #16 for llm
+batch_size = 16 #16 for llm
 cte = True  # set true for constant leraning rate, set [100,10] for decaying learning rate (Check Functions.learning_rate)
 #cte = [100,10]
 lr_exp = list(range(int(inp[8]),int(inp[9]))) # log of the different values for the learning rate - If decaying learning rate is set this weill determine the initial value
@@ -35,7 +35,7 @@ iid = inp[2] == "iid"
 dirichlet = False
 dirichlet_parameter = float(inp[10])
 identity = [
-    "SVHN", ]  # task identity: chose between "cifar10", "cifar100", "SVHN", "Mnist", "ImageNet", "LLM"
+    "LLM", ]  # task identity: chose between "cifar10", "cifar100", "SVHN", "Mnist", "ImageNet", "LLM"
 H = int(inp[3])
 alpha = int(inp[4])
 L = int(inp[5])
@@ -265,7 +265,7 @@ elif identity[0]=="FeMnist":
     normalize = transforms.Normalize(mean=[0.1307], std=[0.3081])
 
     transform_train = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),
+        # transforms.Grayscale(num_output_channels=1),
         transforms.Resize((32, 32)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomCrop(32, padding=4),
@@ -274,7 +274,7 @@ elif identity[0]=="FeMnist":
     ])
 
     transform_test = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),
+        # transforms.Grayscale(num_output_channels=1),
         transforms.Resize((32, 32)),
         transforms.ToTensor(),
         normalize,

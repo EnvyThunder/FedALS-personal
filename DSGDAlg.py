@@ -2,7 +2,7 @@ from Functions import *
 import random
 
 def parallel_sgd_measure(identity, total_data, whole_dataset, exp, cte, H, iters, sampling_f, device, criterion,
-                         num_worker, batch_size, test_loader, alpha, tokenizer, participation, network):
+                         num_worker, batch_size, test_loader, alpha, L, tokenizer, participation, fed_prox_cons, network):
     all_layers = list(network.all_node[0].x.state_dict().keys())
     if identity[0] == "LLM":
         #just using .01 of the dataset to compute training loss
@@ -32,6 +32,7 @@ def parallel_sgd_measure(identity, total_data, whole_dataset, exp, cte, H, iters
     comm_over_t = []
     comm = 0
     difference_by_layer_over_t = []
+    new_model = network.all_node[0].x.state_dict()
     for t in range(iters):
         if t % sampling_f == 0:
             final_x = network.final(identity, total_data)
@@ -45,15 +46,16 @@ def parallel_sgd_measure(identity, total_data, whole_dataset, exp, cte, H, iters
             end = t - node.lag + 1
             start = max(t - node.lag, 0)
             for sgd_round in range(start, end):
-                node.local_sgd(identity, total_data, sgd_round, learning_rate(sgd_round, exp, cte), tokenizer)
+                node.local_sgd(identity, total_data, sgd_round, learning_rate(sgd_round, exp, cte), tokenizer , new_model, fed_prox_cons)
         if t % H == 0:
             temp = network.final(identity, total_data)
+            new_model = temp.state_dict()
             difference_by_layer_over_t.append(differ([node.x for node in network.all_node], temp,
                                                      [node.data_size / total_data for node in network.all_node],
                                                      layer_map))
             print(difference_by_layer_over_t[-1])
             for node in network.all_node:
-                node.x.load_state_dict(temp.state_dict())
+                node.x.load_state_dict(new_model)
         real_time += 1
     return [loss_over_t, real_time_over_t, comm_over_t, difference_by_layer_over_t]
 
@@ -68,6 +70,15 @@ def parallel_sgd_layer(identity, total_data, whole_dataset, exp, cte, H, iters, 
         whole_dataset = torch.utils.data.DataLoader(whole_dataset, batch_size=32)
         specific_layers = [all_layers[i] for i in range(len(all_layers)) if all_layers[i].endswith("k_proj.weight") or
                            "tokens" in all_layers[i] or "lm_head" in all_layers[i]]
+    elif identity[0]=="FeMnist":
+        random_indices = np.random.choice(len(whole_dataset), size=len(whole_dataset)//10, replace=False)
+        sorted_indices = np.sort(random_indices)
+        whole_dataset = torch.utils.data.Subset(whole_dataset, sorted_indices)
+        whole_dataset = torch.utils.data.DataLoader(whole_dataset, batch_size=batch_size, shuffle=True,
+                                                    num_workers=num_worker)
+        specific_layers = list(
+            [all_layers[i] for i in range(len(all_layers)) if
+             "conv" in all_layers[i] or "fc.weight" in all_layers[i] or 'linear.weight' in all_layers[i]])
     else:
         whole_dataset = torch.utils.data.DataLoader(whole_dataset, batch_size=batch_size, shuffle=True,
                                                         num_workers=num_worker)
