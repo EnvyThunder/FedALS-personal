@@ -26,8 +26,8 @@ fed_prox_cons = 0
 child_process = False  # if True creates `repeat_simulation`s parallel threads to run all simultaneously
 mps = False
 gpu = int(inp[6])  # gpu core number to use
-num_worker = 2  # number of workers to lead data samples (torch.num_worker)
-batch_size = 16 #16 for llm
+num_worker = 0  # number of workers to lead data samples (torch.num_worker)
+batch_size = 16 #16 for llm other 64
 cte = True  # set true for constant leraning rate, set [100,10] for decaying learning rate (Check Functions.learning_rate)
 #cte = [100,10]
 lr_exp = list(range(int(inp[8]),int(inp[9]))) # log of the different values for the learning rate - If decaying learning rate is set this weill determine the initial value
@@ -401,7 +401,7 @@ if __name__ == '__main__':
     stream = 1
     if mode == "cons":
         g = parallel_sgd_measure
-    if mode == "sca":
+    elif mode == "sca":
         g = parallel_scaffold_layer
     elif mode == "gen":
         g = parallel_gen_layer
