@@ -12,7 +12,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 import json
 from bitsandbytes.optim import Adam8bit
-from transformers import AdamW
+from torch.optim import AdamW
 from torch.distributions.multivariate_normal import MultivariateNormal
 from torch.autograd import Variable
 import shutil
