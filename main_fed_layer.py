@@ -11,6 +11,32 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from datasets import load_dataset
 import sys
 
+import os
+import builtins
+
+# Define your Kaggle base directory
+KAGGLE_BASE = "/kaggle/working/FedALS-personal"
+
+# Save the original functions
+original_open = builtins.open
+original_exists = os.path.exists
+
+def patched_open(file, *args, **kwargs):
+    # Only prefix if it's a relative path and not already absolute
+    if isinstance(file, str) and not file.startswith('/') and not file.startswith('http'):
+        file = os.path.join(KAGGLE_BASE, file)
+    return original_open(file, *args, **kwargs)
+
+def patched_exists(path):
+    if isinstance(path, str) and not path.startswith('/') and not path.startswith('http'):
+        path = os.path.join(KAGGLE_BASE, path)
+    return original_exists(path)
+
+# Apply the override
+builtins.open = patched_open
+os.path.exists = patched_exists
+
+print(f"Paths are now automatically redirected to: {KAGGLE_BASE}")
 torch.multiprocessing.set_sharing_strategy('file_system')
 
 inp = sys.argv
